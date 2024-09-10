@@ -135,9 +135,9 @@ struct Cohesion {
     double forceMagnitude = k * min(distanceToCenter, radius) / radius;
     Vector2 force = directionToCenter.normalized() * forceMagnitude;
 
-    cout << "Cohesion - Center of Mass: " << centerOfMass.x << " " << centerOfMass.y << endl;
-    cout << "Cohesion - Direction to Center: " << directionToCenter.x << " " << directionToCenter.y << endl;
-    cout << "Cohesion - Force Magnitude: " << forceMagnitude << endl;
+    //cout << "Cohesion - Center of Mass: " << centerOfMass.x << " " << centerOfMass.y << endl;
+    //cout << "Cohesion - Direction to Center: " << directionToCenter.x << " " << directionToCenter.y << endl;
+    //cout << "Cohesion - Force Magnitude: " << forceMagnitude << endl;
     cout << "Cohesion - Force: " << force.x << " " << force.y << endl;
     return force;
   }
@@ -177,14 +177,14 @@ struct Alignment {
     {
       //average velocity
       avgVelocity /= numNeighbours;
-      Vector2 direction = avgVelocity.normalized();
+      Vector2 direction = avgVelocity;//.normalized();
       Vector2 currentVelocity = boids[boidAgentIndex].velocity.normalized();
 
       //compute force
       Vector2 alignForce = (direction - currentVelocity) * k;
 
-      cout << "Alignment - Avg Velocity: " << avgVelocity.x << " " << avgVelocity.y << endl;
-      cout << "Alignment - Current Velocity: " << currentVelocity.x << " " << currentVelocity.y << endl;
+      //cout << "Alignment - Avg Velocity: " << avgVelocity.x << " " << avgVelocity.y << endl;
+      //cout << "Alignment - Current Velocity: " << currentVelocity.x << " " << currentVelocity.y << endl;
       cout << "Alignment - Alignment Force: " << alignForce.x << " " << alignForce.y << endl;
 
       return alignForce;
@@ -217,7 +217,7 @@ struct Separation {
         //and they are within the radius
         double distance = agentPos.Distance(boids[i].position);
 
-        if(distance < radius)
+        if(distance <= radius)
         {
           //compute separation forces
           Vector2 directionToNeighbor = agentPos - boids[i].position;
@@ -289,22 +289,6 @@ int main() {
 
       // Accumulate the forces
       allForces[i] += cohesionForce + separationForce + alignmentForce;
-      /*for (int j = 0; j < numberOfBoids; j++)  // for every boid combination. Pre-processing loop.
-      {
-        // Process Cohesion Forces
-        auto dist = (currentState[i].position-currentState[j].position).getMagnitude();
-        if (i != j && dist <= cohesion.radius) {
-          allForces[i] += cohesion.ComputeForce(currentState, i);
-        }
-        // Process Separation Forces
-        if (i != j && dist <= separation.radius) {
-          allForces[i] += separation.ComputeForce(currentState, i);
-        }
-        // Process Alignment Forces
-        if (i != j && dist <= alignment.radius) {
-          allForces[i] += alignment.ComputeForce(currentState, i);
-        }
-      }*/
     }
     // Tick Time and Output
     // todo: edit this. probably my code will be different than yours.
