@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include <cmath>
+#include <string>
 
 using namespace std;
 
@@ -95,23 +96,30 @@ struct Boid {
 };
 
 struct Cohesion {
-  double radius;
-  double k;
+  double radius; //max radius for cohesion
+  double k; //scaling the force
 
   Cohesion() = default;
-
+  
+  //boids = vector of all agents
+  //boidAgentIndex = index for the agent that is currently being looked at
   Vector2 ComputeForce(const vector<Boid>& boids, int boidAgentIndex)
   {
     Vector2 centerOfMass = {0,0};
     int numNeighbours = 0;
 
+    //go through the list of agents
     for (int i = 0; i < boids.size(); ++i)
     {
       if (i != boidAgentIndex)
       {
+        //if the current boid is NOT the starting boid, find the distance to it
         double distance = boids[boidAgentIndex].position.Distance(boids[i].position);
+        
+        //if the distance is within the radius...
         if(distance <= radius)
         {
+          //...increase center of mass and number of neighbors found
           centerOfMass += boids[i].position;
           ++numNeighbours;
         }
@@ -124,44 +132,47 @@ struct Cohesion {
       return Vector2(0,0);
     }
 
-    //calculate average pos
+    //calculate average center of mass
     centerOfMass /= numNeighbours;
 
-    //calculate velocity
     Vector2 directionToCenter = centerOfMass - boids[boidAgentIndex].position;
     double distanceToCenter = directionToCenter.getMagnitude();
 
-    //compute force (cant go over radius limit)
+    //compute force of cohesion, capped at the radius 
+    //force is scaled to the distance of the center
     double forceMagnitude = k * min(distanceToCenter, radius) / radius;
     Vector2 force = directionToCenter.normalized() * forceMagnitude;
 
-    //cout << "Cohesion - Center of Mass: " << centerOfMass.x << " " << centerOfMass.y << endl;
-    //cout << "Cohesion - Direction to Center: " << directionToCenter.x << " " << directionToCenter.y << endl;
-    //cout << "Cohesion - Force Magnitude: " << forceMagnitude << endl;
     cout << "Cohesion - Force: " << force.x << " " << force.y << endl;
     return force;
   }
 };
 
 struct Alignment {
-  double radius;
-  double k;
+  double radius; //max radius for alignment
+  double k; //scale factor
 
   Alignment() = default;
 
+  //boids = vector of all agents
+  //boidAgentIndex = index for the agent that is currently being looked at
   Vector2 ComputeForce(const vector<Boid>& boids, int boidAgentIndex)
   {
     Vector2 avgVelocity = {0,0};
     int numNeighbours = 0;
 
+    // go through the list of agents
     for (int i = 0; i < boids.size(); ++i)
     {
       if(i != boidAgentIndex)
       {
+        // if the current boid is NOT the starting boid, find the distance to it
         double distance = boids[boidAgentIndex].position.Distance(boids[i].position);
 
+        // if the distance is within the radius...
         if(distance <= radius)
         {
+          //...increase average velocity and number of neighbors 
           avgVelocity += boids[i].velocity;
           ++numNeighbours;
         }
@@ -177,28 +188,26 @@ struct Alignment {
     {
       //average velocity
       avgVelocity /= numNeighbours;
+
+      //find direction and normalized velocity
       Vector2 direction = avgVelocity;//.normalized();
       Vector2 currentVelocity = boids[boidAgentIndex].velocity.normalized();
 
-      //compute force
+      //compute alignment force and scale by k 
       Vector2 alignForce = (direction - currentVelocity) * k;
 
-      //cout << "Alignment - Avg Velocity: " << avgVelocity.x << " " << avgVelocity.y << endl;
-      //cout << "Alignment - Current Velocity: " << currentVelocity.x << " " << currentVelocity.y << endl;
       cout << "Alignment - Alignment Force: " << alignForce.x << " " << alignForce.y << endl;
-
       return alignForce;
     }
-
     //no force if no neighbors
     return Vector2(0,0);
   }
 };
 
 struct Separation {
-  double radius;
-  double k;
-  double maxForce;
+  double radius; //max radius for alignment
+  double k; //for scaling
+  double maxForce; //maxmimum allowable magnitude for seperation force
 
   Separation() = default;
 
@@ -208,10 +217,11 @@ struct Separation {
     Vector2 agentPos = boids[boidAgentIndex].position;
     int numNeighbours = 0;
 
-    //go through all agents
+    // boids = vector of all agents
+    // boidAgentIndex = index for the agent that is currently being looked at
     for (int i = 0; i < boids.size(); ++i)
     {
-      //if its not the chosen agent
+      //if its not the current agent
       if(i != boidAgentIndex)
       {
         //and they are within the radius
@@ -220,6 +230,7 @@ struct Separation {
         if(distance <= radius)
         {
           //compute separation forces
+          //direction to neighbor then the force, add force and num of neighbors
           Vector2 directionToNeighbor = agentPos - boids[i].position;
           Vector2 force = directionToNeighbor / (distance * distance); //changed to distance squared
           separationForce += force;
@@ -233,8 +244,10 @@ struct Separation {
     {
       //average force
       separationForce /= numNeighbours;
+      //magnitude of force scaled
       double forceMagnitude = k * separationForce.getMagnitude();
 
+      //make sure it isnt too big
       if(forceMagnitude > maxForce)
       {
         //clamp force
@@ -277,6 +290,7 @@ int main() {
     double deltaT = stod(line);
     // a vector of the sum of forces for each boid.
     vector<Vector2> allForces = vector<Vector2>(numberOfBoids, {0, 0});
+
     // Compute Forces
     for (int i = 0; i < numberOfBoids; i++)  // for every boid
     {
@@ -290,9 +304,11 @@ int main() {
       // Accumulate the forces
       allForces[i] += cohesionForce + separationForce + alignmentForce;
     }
+
     // Tick Time and Output
     // todo: edit this. probably my code will be different than yours.
     cout << fixed << setprecision(3);  // set 3 decimal places precision for output
+
     for (int i = 0; i < numberOfBoids; i++) // for every boid
     {
       newState[i].velocity += allForces[i] * deltaT;
